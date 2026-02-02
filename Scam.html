@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Will you be my Valentine?</title> 
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script> 
+
+<style>
+:root {
+  --bg1: #ffd6e7;
+  --bg2: #ffeef6;
+  --card: #ffffffcc;
+  --yes: #ff3b7a;
+} 
+
+* { box-sizing: border-box; } 
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+  font-family: system-ui, sans-serif;
+  overflow: hidden;
+  padding: 16px;
+} 
+
+#confettiCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+} 
+
+.card {
+  width: min(720px, 92vw);
+  padding: 26px 22px;
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  border-radius: 22px;
+  text-align: center;
+  box-shadow: 0 18px 60px rgba(0,0,0,.15);
+} 
+
+h1 {
+  font-size: clamp(26px, 4vw, 44px);
+  margin: 12px 0 18px;
+} 
+
+.button-zone {
+  position: relative;
+  width: min(520px, 92%);
+  height: 150px;
+  margin: 0 auto;
+  touch-action: none;
+} 
+
+button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0,0,0,.14);
+} 
+
+#yesBtn {
+  left: 18%;
+  background: var(--yes);
+  color: #fff;
+} 
+
+#noBtn {
+  left: 62%;
+  background: #e5e7eb;
+  color: #111827;
+} 
+
+.hint {
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: .7;
+} 
+
+.result {
+  display: none;
+  margin-top: 18px;
+} 
+
+#spellText {
+  font-size: clamp(28px, 4.5vw, 46px);
+  font-weight: 900;
+  color: #ff3b7a;
+  text-shadow: 0 0 10px #ff7aa2, 0 0 25px #ff3b7a;
+  animation: glow 1.6s ease-in-out infinite alternate,
+             shake 3s infinite;
+  white-space: nowrap;
+} 
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 8px #ff7aa2, 0 0 18px #ff3b7a;
+  }
+  to {
+    text-shadow: 0 0 14px #ffd1e1, 0 0 35px #ff1f68;
+  }
+} 
+
+@keyframes shake {
+  0%, 96%, 100% { transform: translateX(0); }
+  97% { transform: translateX(-2px); }
+  98% { transform: translateX(2px); }
+  99% { transform: translateX(-1px); }
+} 
+
+#whatsappBtn {
+  margin-top: 18px;
+  padding: 14px 22px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #25D366, #1ebd5a);
+  color: white;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+</style>
+</head> 
+
+<body> 
+
+<canvas id="confettiCanvas"></canvas> 
+
+<audio id="spellSound" preload="auto">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-spell-600.mp3" type="audio/mpeg">
+</audio> 
+
+<main class="card">
+  <h1>nirali will you be my valentine?</h1> 
+
+  <section class="button-zone" id="zone">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </section> 
+
+  <div class="hint" id="hint">“No” seems a bit shy 😈</div> 
+
+  <section class="result" id="result">
+    <h2 id="spellText"></h2>
+    <button id="whatsappBtn">🔮 Send the Spell on WhatsApp</button>
+  </section>
+</main> 
+
+<script>
+let spellUnlocked = false; 
+
+history.pushState(null, "", location.href); 
+
+window.addEventListener("popstate", () => {
+  if (!spellUnlocked) history.pushState(null, "", location.href);
+}); 
+
+window.addEventListener("beforeunload", e => {
+  if (!spellUnlocked) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+}); 
+
+const zone = document.getElementById("zone");
+const yesBtn = document.getElementById("yesBtn");
+const noBtn = document.getElementById("noBtn");
+const result = document.getElementById("result");
+const hint = document.getElementById("hint");
+const spellText = document.getElementById("spellText");
+const spellSound = document.getElementById("spellSound");
+const whatsappBtn = document.getElementById("whatsappBtn");
+const confettiCanvas = document.getElementById("confettiCanvas"); 
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  confettiCanvas.width = innerWidth * dpr;
+  confettiCanvas.height = innerHeight * dpr;
+}
+resizeCanvas();
+addEventListener("resize", resizeCanvas); 
+
+const confettiInstance = confetti.create(confettiCanvas, { resize: false }); 
+
+let yesScale = 1; 
+
+function growYes() {
+  yesScale = Math.min(yesScale + 0.1, 2.2);
+  yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+} 
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+} 
+
+function moveNo(x, y) {
+  const z = zone.getBoundingClientRect();
+  const b = noBtn.getBoundingClientRect(); 
+
+  let dx = (b.left + b.width / 2) - x;
+  let dy = (b.top + b.height / 2) - y;
+  let mag = Math.hypot(dx, dy) || 1;
+  dx /= mag; dy /= mag; 
+
+  let left = (b.left - z.left) + dx * 150;
+  let top = (b.top - z.top) + dy * 150; 
+
+  noBtn.style.left = clamp(left, 0, z.width - b.width) + "px";
+  noBtn.style.top = clamp(top, 0, z.height - b.height) + "px"; 
+
+  growYes();
+} 
+
+zone.addEventListener("pointermove", e => {
+  const b = noBtn.getBoundingClientRect();
+  const d = Math.hypot(
+    (b.left + b.width / 2) - e.clientX,
+    (b.top + b.height / 2) - e.clientY
+  );
+  if (d < 140) moveNo(e.clientX, e.clientY);
+}); 
+
+yesBtn.addEventListener("click", () => {
+  spellUnlocked = true; 
+
+  zone.style.display = "none";
+  hint.style.display = "none";
+  result.style.display = "block"; 
+
+  const text = "Now you are under my spell ! ✨🖤";
+  spellText.textContent = "";
+  spellSound.volume = 0.7;
+  spellSound.play(); 
+
+  let i = 0;
+  const typing = setInterval(() => {
+    spellText.textContent += text[i++];
+    if (i >= text.length) clearInterval(typing);
+  }, 60); 
+
+  const end = Date.now() + 1800;
+  (function frame() {
+    confettiInstance({
+      particleCount: 10,
+      spread: 100,
+      startVelocity: 35,
+      ticks: 160,
+      shapes: ["heart", "star"],
+      scalar: 1.2,
+      origin: { x: Math.random(), y: Math.random() * 0.4 }
+    });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+}); 
+
+whatsappBtn.addEventListener("click", () => {
+  const msg =
+    "😈✨ You are officially under my spell!\n\n" +
+    "Tap here to see what happened 🔮👇\n" +
+    location.href; 
+
+  window.open(
+    "https://wa.me/?text=" + encodeURIComponent(msg),
+    "_blank"
+  );
+});
+</script> 
+
+</body>
+</html>
